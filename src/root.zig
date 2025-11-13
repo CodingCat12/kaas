@@ -1,23 +1,36 @@
-//! By convention, root.zig is the root source file when making a library.
 const std = @import("std");
 
-pub fn bufferedPrint() !void {
-    // Stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout = &stdout_writer.interface;
+pub const World = world.World;
+pub const App = app.App;
+pub const AppConfig = app.Config;
+pub const Query = system.Query;
+pub const Resource = system.Res;
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+pub const world = @import("world.zig");
+pub const app = @import("app.zig");
+pub const system = @import("system.zig");
 
-    try stdout.flush(); // Don't forget to flush!
-}
+pub const Entity = packed struct(u128) {
+    storage_index: u64,
+    list_index: u64,
+};
 
-pub fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
+pub fn Resources(comptime types: []const type) type {
+    var fields: [types.len]std.builtin.Type.StructField = undefined;
+    for (types, 0..) |T, i| {
+        fields[i] = .{
+            .name = @typeName(T),
+            .type = T,
+            .default_value_ptr = null,
+            .is_comptime = false,
+            .alignment = @alignOf(T),
+        };
+    }
 
-test "basic add functionality" {
-    try std.testing.expect(add(3, 7) == 10);
+    return @Type(.{ .@"struct" = .{
+        .fields = &fields,
+        .decls = &.{},
+        .is_tuple = false,
+        .layout = .auto,
+    } });
 }
