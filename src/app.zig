@@ -33,7 +33,7 @@ pub fn App(comptime config: Config) type {
 
         pub fn run(self: *Self) !void {
             inline for (config.systems) |System| {
-                try kaas.system.callSystem(
+                try kaas.systems.callSystem(
                     System,
                     self.allocator,
                     &self.world,

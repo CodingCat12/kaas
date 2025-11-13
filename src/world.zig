@@ -28,7 +28,9 @@ pub fn World(comptime archetypes: []const type) type {
             self.* = undefined;
         }
 
-        pub fn spawn(self: *Self, comptime Archetype: type, allocator: std.mem.Allocator, bundle: Archetype) !Entity {
+        pub fn spawn(self: *Self, comptime bundle_type: kaas.module.Bundle, allocator: std.mem.Allocator, bundle: bundle_type.inner) !Entity {
+            const Archetype = bundle_type.inner;
+
             inline for (@typeInfo(Storages).@"struct".fields, 0..) |field, i| {
                 if (comptime std.mem.eql(u8, field.name, @typeName(Archetype))) {
                     try @field(self.storages, field.name).inner.append(allocator, bundle);
