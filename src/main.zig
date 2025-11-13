@@ -232,14 +232,14 @@ pub fn World(comptime archetypes: []const type) type {
             var list: std.ArrayList(Components) = .empty;
             errdefer list.deinit(allocator);
 
-            storages: inline for (@typeInfo(Storages).@"struct".fields) |field| {
+            storages: inline for (std.meta.fields(Storages)) |field| {
                 const Archetype = field.type.Child;
 
                 // Ensure this archetype has all queried components
-                inline for (@typeInfo(Components).@"struct".fields) |component| {
+                inline for (std.meta.fields(Components)) |component| {
                     comptime var found = false;
                     inline for (@typeInfo(Archetype).@"struct".fields) |archetype_field| {
-                        if (comptime std.mem.eql(u8, @typeName(@typeInfo(component.type).pointer.child), @typeName(archetype_field.type))) {
+                        if (comptime std.mem.eql(u8, @typeName(std.meta.Child(component.type)), @typeName(archetype_field.type))) {
                             found = true;
                             break;
                         }
@@ -251,11 +251,11 @@ pub fn World(comptime archetypes: []const type) type {
                     @field(self.storages, field.name).inner.slice();
                 const res_slice = try list.addManyAsSlice(allocator, slice.len);
 
-                inline for (@typeInfo(Components).@"struct".fields) |component| {
-                    const FieldType = @typeInfo(component.type).pointer.child;
+                inline for (std.meta.fields(Components)) |component| {
+                    const FieldType = std.meta.Child(component.type);
                     comptime var field_name: []const u8 = &.{};
 
-                    inline for (@typeInfo(Archetype).@"struct".fields) |archetype_field| {
+                    inline for (std.meta.fields(Archetype)) |archetype_field| {
                         if (comptime std.mem.eql(u8, @typeName(FieldType), @typeName(archetype_field.type))) {
                             field_name = archetype_field.name;
                         }
