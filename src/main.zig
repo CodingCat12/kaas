@@ -62,9 +62,11 @@ pub const Config = struct {
 
 pub fn App(comptime config: Config) type {
     const WorldType = World(config.archetypes);
+    const ResourcesType = Resources(config.resources);
 
     return struct {
         allocator: std.mem.Allocator,
+        resources: ResourcesType,
         world: WorldType,
 
         const Self = @This();
@@ -73,6 +75,7 @@ pub fn App(comptime config: Config) type {
             return .{
                 .allocator = allocator,
                 .world = .empty,
+                .resources = undefined,
             };
         }
 
@@ -98,14 +101,15 @@ pub fn App(comptime config: Config) type {
             inline for (std.meta.fields(Args)) |field| {
                 const Field = field.type;
 
-                if (!@hasDecl(Field, "__kaas_query")) {
-                    @compileError("Invalid system parameter: " ++ @typeName(Field));
+                if (@hasDecl(Field, "__kaas_query")) {
+                    const slice = try self.world.query(Field.Data, self.allocator);
+                    var inner = Field.Inner{ .slice = slice };
+                    @field(args, field.name).ptr = &inner;
                 }
 
-                const slice = try self.world.query(Field.Data, self.allocator);
-
-                var inner = Field.Inner{ .slice = slice };
-                @field(args, field.name).ptr = &inner;
+                if (@hasDecl(Field, "__kaas_res")) {
+                    @field(args, field.name).ptr = &@field(self.resources, @typeName(Field.Child));
+                }
             }
 
             defer inline for (@typeInfo(Args).@"struct".fields) |field| {
@@ -117,6 +121,36 @@ pub fn App(comptime config: Config) type {
             @call(.auto, runFn, args);
         }
     };
+}
+
+pub fn Res(comptime T: type) type {
+    return struct {
+        ptr: *T,
+
+        pub const Child = T;
+
+        pub const __kaas_res: void = {};
+    };
+}
+
+fn Resources(comptime types: []const type) type {
+    var fields: [types.len]std.builtin.Type.StructField = undefined;
+    for (types, 0..) |T, i| {
+        fields[i] = .{
+            .name = @typeName(T),
+            .type = T,
+            .default_value_ptr = null,
+            .is_comptime = false,
+            .alignment = @alignOf(T),
+        };
+    }
+
+    return @Type(.{ .@"struct" = .{
+        .fields = &fields,
+        .decls = &.{},
+        .is_tuple = false,
+        .layout = .auto,
+    } });
 }
 
 pub fn Query(comptime T: type) type {
