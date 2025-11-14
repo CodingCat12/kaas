@@ -7,11 +7,11 @@ const Self = @This();
 
 pub const init: Self = .{};
 
-pub fn bundle(self: *Self, comptime T: type) void {
+pub fn addBundle(self: *Self, comptime T: type) void {
     self.bundles = self.bundles ++ .{T};
 }
 
-pub fn system(self: *Self, comptime T: type) void {
+pub fn addSystem(self: *Self, comptime T: type) void {
     self.systems = self.systems ++ .{T};
 }
 
