@@ -33,6 +33,16 @@ pub fn Query(comptime T: type) type {
     };
 }
 
+pub fn World(comptime T: type) type {
+    return struct {
+        ptr: *T,
+
+        pub const Child = T;
+
+        pub const __kaas_world: void = {};
+    };
+}
+
 pub fn callSystem(
     comptime System: type,
     allocator: std.mem.Allocator,
@@ -58,6 +68,14 @@ pub fn callSystem(
         if (@hasDecl(Field, "__kaas_res")) {
             @field(args, field.name).ptr = &@field(resources, @typeName(Field.Child));
         }
+
+        if (@hasDecl(Field, "__kaas_world")) {
+            @field(args, field.name).ptr = world;
+        }
+
+        if (Field == std.mem.Allocator) {
+            @field(args, field.name) = allocator;
+        }
     }
 
     defer inline for (@typeInfo(Args).@"struct".fields) |field| {
@@ -66,5 +84,7 @@ pub fn callSystem(
         }
     };
 
-    @call(.auto, runFn, args);
+    const res = @call(.auto, runFn, args);
+
+    if (@typeInfo(@typeInfo(RunFn).@"fn".return_type.?) == .error_union) try res;
 }
