@@ -1,5 +1,7 @@
 const std = @import("std");
 
+pub const Schedule = enum { startup, update };
+
 pub fn Res(comptime T: type) type {
     return struct {
         ptr: *T,

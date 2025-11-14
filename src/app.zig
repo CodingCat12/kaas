@@ -11,6 +11,23 @@ pub fn App(comptime config: Config) type {
     const World = kaas.world.World(config.archetypes);
     const Resources = kaas.Resources(config.resources);
 
+    const startup_systems, const update_systems = comptime blk: {
+        var update: []const type = &.{};
+        var startup: []const type = &.{};
+
+        for (config.systems) |System| {
+            switch (@as(
+                kaas.systems.Schedule,
+                if (@hasDecl(System, "schedule")) System.schedule else .update,
+            )) {
+                .startup => startup = startup ++ .{System},
+                .update => update = update ++ .{System},
+            }
+        }
+
+        break :blk .{ startup, update };
+    };
+
     return struct {
         allocator: std.mem.Allocator,
         resources: Resources,
@@ -31,8 +48,19 @@ pub fn App(comptime config: Config) type {
             self.* = undefined;
         }
 
-        pub fn run(self: *Self) !void {
-            inline for (config.systems) |System| {
+        pub fn startup(self: *Self) !void {
+            inline for (startup_systems) |System| {
+                try kaas.systems.callSystem(
+                    System,
+                    self.allocator,
+                    &self.world,
+                    &self.resources,
+                );
+            }
+        }
+
+        pub fn tick(self: *Self) !void {
+            inline for (update_systems) |System| {
                 try kaas.systems.callSystem(
                     System,
                     self.allocator,

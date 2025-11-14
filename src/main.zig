@@ -15,6 +15,8 @@ pub fn module(comptime mod: *kaas.Module) void {
     const World = mod.World();
 
     const Setup = struct {
+        pub const schedule = .startup;
+
         pub fn run(
             allocator: std.mem.Allocator,
             world: kaas.systems.World(World),
@@ -60,5 +62,9 @@ pub fn main() !void {
     var app = kaas.rootApp(allocator);
     defer app.deinit();
 
-    try app.run();
+    try app.startup();
+
+    try app.tick();
+    try app.tick();
+    try app.tick();
 }
