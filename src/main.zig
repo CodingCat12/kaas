@@ -10,7 +10,7 @@ pub fn module(comptime mod: *kaas.Module) void {
         vel: Velocity,
     };
 
-    mod.bundle(Player);
+    mod.addBundle(Player);
 
     const World = mod.World();
 
@@ -48,9 +48,9 @@ pub fn module(comptime mod: *kaas.Module) void {
         }
     };
 
-    mod.system(Setup);
-    mod.system(Movement);
-    mod.system(Print);
+    mod.addSystem(Setup);
+    mod.addSystem(Movement);
+    mod.addSystem(Print);
 }
 
 pub fn main() !void {
