@@ -62,9 +62,5 @@ pub fn main() !void {
     var app = kaas.rootApp(allocator);
     defer app.deinit();
 
-    try app.startup();
-
-    try app.tick();
-    try app.tick();
-    try app.tick();
+    try app.run();
 }
