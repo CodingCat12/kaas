@@ -16,9 +16,7 @@ pub fn rootApp(allocator: std.mem.Allocator) RootApp() {
 }
 
 pub fn RootApp() type {
-    var mod: Module = .init;
-    mod.import(@import("root"));
-    return App(mod.build());
+    return App(Module.init(@import("root")).build());
 }
 
 pub const Entity = packed struct(u128) {
