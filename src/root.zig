@@ -10,7 +10,6 @@ pub const Module = @import("Module.zig");
 pub const world = @import("world.zig");
 pub const app = @import("app.zig");
 pub const systems = @import("system.zig");
-pub const module = @import("module.zig");
 
 pub fn rootApp(allocator: std.mem.Allocator) RootApp() {
     return .init(allocator);
