@@ -11,6 +11,10 @@ pub fn addBundle(self: *Self, comptime T: type) void {
     self.bundles = self.bundles ++ .{T};
 }
 
+pub fn addBundles(self: *Self, comptime bundles: anytype) void {
+    self.bundles = self.bundles ++ bundles;
+}
+
 pub fn addSystem(self: *Self, comptime T: type) void {
     self.systems = self.systems ++ .{T};
 }
