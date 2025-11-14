@@ -13,6 +13,12 @@ pub const app = @import("app.zig");
 pub const systems = @import("system.zig");
 pub const module = @import("module.zig");
 
+pub fn rootApp(allocator: std.mem.Allocator) App(
+    module.module(@import("root")),
+) {
+    return .init(allocator);
+}
+
 pub const Entity = packed struct(u128) {
     storage_index: u64,
     list_index: u64,

@@ -24,7 +24,7 @@ pub fn main() !void {
 
     const allocator = debug_allocator.allocator();
 
-    var app: kaas.App(kaas.module.module(@This())) = .init(allocator);
+    var app = kaas.rootApp(allocator);
     defer app.deinit();
 
     const p = try app.world.spawn(player, app.allocator, .{
