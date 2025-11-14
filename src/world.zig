@@ -50,49 +50,37 @@ pub fn World(comptime archetypes: []const type) type {
             }
         }
 
-        pub fn query(self: *Self, comptime Components: type, allocator: std.mem.Allocator) ![]const Components {
-            var list: std.ArrayList(Components) = .empty;
-            errdefer list.deinit(allocator);
+        pub fn query(self: *Self, comptime Components: type) Query(Components) {
+            return .{ .storages = &self.storages };
+        }
 
-            storages: inline for (std.meta.fields(Storages)) |field| {
-                const Archetype = field.type.Child;
+        pub fn Query(comptime Components: type) type {
+            return struct {
+                storages: *Storages,
+                current_field: usize = 0,
+                index: usize = 0,
 
-                // Ensure this archetype has all queried components
-                inline for (std.meta.fields(Components)) |component| {
-                    comptime var found = false;
-                    inline for (@typeInfo(Archetype).@"struct".fields) |archetype_field| {
-                        if (comptime std.mem.eql(u8, @typeName(std.meta.Child(component.type)), @typeName(archetype_field.type))) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) continue :storages;
-                }
+                pub fn next(self: *@This()) ?Components {
+                    inline for (std.meta.fields(Storages), 0..) |field, i| {
+                        const storage = &@field(self.storages, field.name).inner;
+                        if (self.index < storage.len and i >= self.current_field) {
+                            self.current_field += 1;
+                            self.index = 0;
 
-                const slice: std.MultiArrayList(Archetype).Slice =
-                    @field(self.storages, field.name).inner.slice();
-                const res_slice = try list.addManyAsSlice(allocator, slice.len);
+                            var result: Components = undefined;
+                            inline for (std.meta.fields(Components)) |component| {
+                                const field_tag = @field(std.meta.FieldEnum(field.type.Child), component.name);
+                                @field(result, component.name) = &storage.items(field_tag)[self.index];
+                            }
 
-                inline for (std.meta.fields(Components)) |component| {
-                    const FieldType = std.meta.Child(component.type);
-                    comptime var field_name: []const u8 = &.{};
-
-                    inline for (std.meta.fields(Archetype)) |archetype_field| {
-                        if (comptime std.mem.eql(u8, @typeName(FieldType), @typeName(archetype_field.type))) {
-                            field_name = archetype_field.name;
+                            self.index += 1;
+                            return result;
                         }
                     }
 
-                    const field_tag = @field(std.meta.FieldEnum(Archetype), field_name);
-
-                    const items = slice.items(field_tag);
-                    for (items, 0..) |*item, i| {
-                        @field(res_slice[i], component.name) = item;
-                    }
+                    return null;
                 }
-            }
-
-            return list.toOwnedSlice(allocator);
+            };
         }
     };
 }

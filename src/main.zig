@@ -30,7 +30,10 @@ pub fn module(comptime mod: *kaas.Module) void {
 
     const Movement = struct {
         pub fn run(
-            query: kaas.Query(struct { pos: *Position, vel: *const Velocity }),
+            query: kaas.Query(
+                World,
+                struct { pos: *Position, vel: *const Velocity },
+            ),
         ) void {
             while (query.next()) |entry| {
                 entry.pos.x += entry.vel.x;
@@ -41,7 +44,10 @@ pub fn module(comptime mod: *kaas.Module) void {
 
     const Print = struct {
         pub fn run(
-            query: kaas.Query(struct { pos: *const Position }),
+            query: kaas.Query(
+                World,
+                struct { pos: *const Position },
+            ),
         ) void {
             var i: usize = 0;
             while (query.next()) |item| : (i += 1) {

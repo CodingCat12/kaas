@@ -1,4 +1,5 @@
 const std = @import("std");
+const kaas = @import("root.zig");
 
 pub const Schedule = enum { startup, update };
 
@@ -12,7 +13,7 @@ pub fn Res(comptime T: type) type {
     };
 }
 
-pub fn Query(comptime T: type) type {
+pub fn Query(comptime W: type, comptime T: type) type {
     return struct {
         ptr: *Inner,
 
@@ -23,15 +24,10 @@ pub fn Query(comptime T: type) type {
         pub const __kaas_query: void = {};
 
         pub fn next(self: Self) ?T {
-            if (self.ptr.index >= self.ptr.slice.len) return null;
-            defer self.ptr.index += 1;
-            return self.ptr.slice[self.ptr.index];
+            return Inner.next(self.ptr);
         }
 
-        pub const Inner = struct {
-            slice: []const T,
-            index: usize = 0,
-        };
+        pub const Inner = W.Query(T);
     };
 }
 
@@ -62,8 +58,9 @@ pub fn callSystem(
         const Field = field.type;
 
         if (@hasDecl(Field, "__kaas_query")) {
-            const slice = try world.query(Field.Data, allocator);
-            var inner = Field.Inner{ .slice = slice };
+            // const slice = try world.query(Field.Data, allocator);
+            // var inner = Field.Inner{ .slice = slice };
+            var inner = world.query(Field.Data);
             @field(args, field.name).ptr = &inner;
         }
 
@@ -79,12 +76,6 @@ pub fn callSystem(
             @field(args, field.name) = allocator;
         }
     }
-
-    defer inline for (@typeInfo(Args).@"struct".fields) |field| {
-        if (@hasDecl(@FieldType(Args, field.name), "__kaas_query")) {
-            allocator.free(@field(args, field.name).ptr.slice);
-        }
-    };
 
     const res = @call(.auto, runFn, args);
 
