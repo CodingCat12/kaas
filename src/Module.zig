@@ -15,6 +15,10 @@ pub fn addSystem(self: *Self, comptime T: type) void {
     self.systems = self.systems ++ .{T};
 }
 
+pub fn addSystems(self: *Self, comptime systems: anytype) void {
+    self.systems = self.systems ++ systems;
+}
+
 pub fn import(self: *Self, comptime M: type) void {
     M.module(self);
 }

@@ -48,9 +48,7 @@ pub fn module(comptime mod: *kaas.Module) void {
         }
     };
 
-    mod.addSystem(Setup);
-    mod.addSystem(Movement);
-    mod.addSystem(Print);
+    mod.addSystems(.{ Setup, Movement, Print });
 }
 
 pub fn main() !void {
