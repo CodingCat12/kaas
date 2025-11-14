@@ -9,7 +9,7 @@ pub const Config = struct {
 
 pub fn App(comptime config: Config) type {
     const World = kaas.world.World(config.archetypes);
-    const Resources = kaas.Resources(config.resources);
+    const ResourcesType = Resources(config.resources);
 
     const startup_systems, const update_systems = comptime blk: {
         var update: []const type = &.{};
@@ -30,7 +30,7 @@ pub fn App(comptime config: Config) type {
 
     return struct {
         allocator: std.mem.Allocator,
-        resources: Resources,
+        resources: ResourcesType,
         world: World,
 
         const Self = @This();
@@ -97,4 +97,24 @@ pub fn App(comptime config: Config) type {
             }
         }
     };
+}
+
+pub fn Resources(comptime types: []const type) type {
+    var fields: [types.len]std.builtin.Type.StructField = undefined;
+    for (types, 0..) |T, i| {
+        fields[i] = .{
+            .name = @typeName(T),
+            .type = T,
+            .default_value_ptr = null,
+            .is_comptime = false,
+            .alignment = @alignOf(T),
+        };
+    }
+
+    return @Type(.{ .@"struct" = .{
+        .fields = &fields,
+        .decls = &.{},
+        .is_tuple = false,
+        .layout = .auto,
+    } });
 }
