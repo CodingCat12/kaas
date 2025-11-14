@@ -5,18 +5,21 @@ pub const App = app.App;
 pub const AppConfig = app.Config;
 pub const Query = systems.Query;
 pub const Resource = systems.Res;
-pub const bundle = module.bundle;
-pub const system = module.system;
+pub const Module = @import("Module.zig");
 
 pub const world = @import("world.zig");
 pub const app = @import("app.zig");
 pub const systems = @import("system.zig");
 pub const module = @import("module.zig");
 
-pub fn rootApp(allocator: std.mem.Allocator) App(
-    module.module(@import("root")),
-) {
+pub fn rootApp(allocator: std.mem.Allocator) RootApp() {
     return .init(allocator);
+}
+
+pub fn RootApp() type {
+    var mod: Module = .init;
+    mod.import(@import("root"));
+    return App(mod.build());
 }
 
 pub const Entity = packed struct(u128) {

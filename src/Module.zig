@@ -1,0 +1,32 @@
+const kaas = @import("root.zig");
+
+bundles: []const type = &.{},
+systems: []const type = &.{},
+
+const Self = @This();
+
+pub const init: Self = .{};
+
+pub fn bundle(self: *Self, comptime T: type) void {
+    self.bundles = self.bundles ++ .{T};
+}
+
+pub fn system(self: *Self, comptime T: type) void {
+    self.systems = self.systems ++ .{T};
+}
+
+pub fn import(self: *Self, comptime M: type) void {
+    M.module(self);
+}
+
+pub fn World(self: *const Self) type {
+    return kaas.World(self.bundles);
+}
+
+pub fn build(self: Self) kaas.AppConfig {
+    return .{
+        .systems = self.systems,
+        .archetypes = self.bundles,
+        .resources = &.{},
+    };
+}

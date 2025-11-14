@@ -1,22 +1,57 @@
 const std = @import("std");
 const kaas = @import("kaas");
 
-const Position = struct { x: f32, y: f32 };
-const Velocity = struct { x: f32, y: f32 };
+pub fn module(comptime mod: *kaas.Module) void {
+    const Position = struct { x: f32, y: f32 };
+    const Velocity = struct { x: f32, y: f32 };
 
-pub const player = kaas.bundle(struct {
-    pos: Position,
-    vel: Velocity,
-});
+    const Player = struct {
+        pos: Position,
+        vel: Velocity,
+    };
 
-const movement = kaas.system(struct {
-    pub fn run(query: kaas.Query(struct { pos: *Position, vel: *const Velocity })) void {
-        while (query.next()) |entry| {
-            entry.pos.x += entry.vel.x;
-            entry.pos.y += entry.vel.y;
+    mod.bundle(Player);
+
+    const World = mod.World();
+
+    const Setup = struct {
+        pub fn run(
+            allocator: std.mem.Allocator,
+            world: kaas.systems.World(World),
+        ) !void {
+            _ = try world.ptr.spawn(Player, allocator, .{
+                .pos = .{ .x = 0.2, .y = 37.5 },
+                .vel = .{ .x = 10, .y = 0 },
+            });
         }
-    }
-});
+    };
+
+    const Movement = struct {
+        pub fn run(
+            query: kaas.Query(struct { pos: *Position, vel: *const Velocity }),
+        ) void {
+            while (query.next()) |entry| {
+                entry.pos.x += entry.vel.x;
+                entry.pos.y += entry.vel.y;
+            }
+        }
+    };
+
+    const Print = struct {
+        pub fn run(
+            query: kaas.Query(struct { pos: *const Position }),
+        ) void {
+            var i: usize = 0;
+            while (query.next()) |item| : (i += 1) {
+                std.debug.print("{d}. x: {d:.2}, y: {d:.2}\n", .{ i, item.pos.x, item.pos.y });
+            }
+        }
+    };
+
+    mod.system(Setup);
+    mod.system(Movement);
+    mod.system(Print);
+}
 
 pub fn main() !void {
     var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
@@ -27,27 +62,5 @@ pub fn main() !void {
     var app = kaas.rootApp(allocator);
     defer app.deinit();
 
-    const p = try app.world.spawn(player, app.allocator, .{
-        .pos = .{ .x = 0.2, .y = 37.5 },
-        .vel = .{ .x = 10, .y = 0 },
-    });
-
-    const positions = try app.world.query(struct { *Position }, app.allocator);
-    defer app.allocator.free(positions);
-
-    std.debug.print("Before applying velocity: {any}\n", .{positions});
-
     try app.run();
-
-    const updated_positions = try app.world.query(struct { *Position }, app.allocator);
-    defer app.allocator.free(updated_positions);
-
-    std.debug.print("After applying velocity: {any}\n", .{updated_positions});
-
-    app.world.despawn(p);
-
-    const empty_positions = try app.world.query(struct { *Position }, app.allocator);
-    defer app.allocator.free(empty_positions);
-
-    std.debug.print("After despawning entites: {any}\n", .{empty_positions});
 }
